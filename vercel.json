@@ -1,7 +1,7 @@
 {
   "framework": "vite",
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/api-server typecheck && pnpm --filter @workspace/nico-libros typecheck && pnpm --filter @workspace/nico-libros build",
+  "buildCommand": "pnpm run typecheck:libs && pnpm --filter @workspace/api-server typecheck && pnpm --filter @workspace/nico-libros typecheck && pnpm --filter @workspace/nico-libros build",
   "outputDirectory": "artifacts/nico-libros/dist/public",
   "rewrites": [
     {
