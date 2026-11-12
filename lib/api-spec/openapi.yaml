@@ -1,0 +1,820 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: storefront
+    description: Public catalog and store content
+  - name: orders
+    description: Customer orders
+  - name: admin
+    description: Protected store management
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /storefront/catalog:
+    get:
+      operationId: getCatalog
+      tags: [storefront]
+      summary: Get books and categories
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: integer }
+        - in: query
+          name: availableOnly
+          schema: { type: boolean }
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [featured, newest, price_asc, price_desc]
+        - in: query
+          name: maxPrice
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: Public catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catalog"
+  /storefront/bestsellers:
+    get:
+      operationId: getBestsellers
+      tags: [storefront]
+      summary: Get books sold in the last seven days
+      responses:
+        "200":
+          description: Weekly best sellers or newest books when no confirmed sales exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bestsellers"
+  /storefront/settings:
+    get:
+      operationId: getStoreSettings
+      tags: [storefront]
+      summary: Get public store settings
+      responses:
+        "200":
+          description: Public store content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreSettings"
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a pending customer order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Pending order saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedOrder"
+        "400":
+          description: Invalid order or insufficient stock
+        "429":
+          description: Too many order requests
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Sign in to the store admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Admin session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+        "401":
+          description: Invalid credentials
+        "503":
+          description: Admin credentials are not configured
+  /admin/session:
+    get:
+      operationId: getAdminSession
+      tags: [admin]
+      summary: Check current admin session
+      responses:
+        "200":
+          description: Session status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSession"
+    delete:
+      operationId: adminLogout
+      tags: [admin]
+      summary: End admin session
+      responses:
+        "204":
+          description: Session ended
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [admin]
+      summary: Get store dashboard metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+        "401":
+          description: Admin sign-in required
+  /admin/books:
+    get:
+      operationId: getAdminBooks
+      tags: [admin]
+      summary: List all books for management
+      responses:
+        "200":
+          description: Books
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminBook" }
+        "401":
+          description: Admin sign-in required
+    post:
+      operationId: createBook
+      tags: [admin]
+      summary: Add a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookInput"
+      responses:
+        "201":
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBook"
+        "401":
+          description: Admin sign-in required
+  /admin/books/{id}:
+    patch:
+      operationId: updateBook
+      tags: [admin]
+      summary: Update book details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookUpdate"
+      responses:
+        "200":
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBook"
+        "401":
+          description: Admin sign-in required
+    delete:
+      operationId: archiveBook
+      tags: [admin]
+      summary: Archive a book
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Book archived
+        "401":
+          description: Admin sign-in required
+  /admin/categories:
+    get:
+      operationId: getAdminCategories
+      tags: [admin]
+      summary: List categories for management
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+        "401":
+          description: Admin sign-in required
+    post:
+      operationId: createCategory
+      tags: [admin]
+      summary: Add a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Admin sign-in required
+  /admin/categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [admin]
+      summary: Update a category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Admin sign-in required
+    delete:
+      operationId: archiveCategory
+      tags: [admin]
+      summary: Archive a category
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Category archived
+        "401":
+          description: Admin sign-in required
+  /admin/orders:
+    get:
+      operationId: getAdminOrders
+      tags: [admin]
+      summary: List recent orders
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Order" }
+        "401":
+          description: Admin sign-in required
+  /admin/orders/{id}:
+    patch:
+      operationId: updateOrderStatus
+      tags: [admin]
+      summary: Change an order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusInput"
+      responses:
+        "200":
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          description: Admin sign-in required
+  /admin/purchases:
+    post:
+      operationId: createInventoryPurchase
+      tags: [admin]
+      summary: Record an inventory purchase and add its units to stock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryPurchaseInput"
+      responses:
+        "201":
+          description: Purchase recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryPurchase"
+        "400":
+          description: Invalid purchase
+        "401":
+          description: Admin sign-in required
+        "404":
+          description: Book not found
+  /admin/expenses:
+    post:
+      operationId: createFinanceExpense
+      tags: [admin]
+      summary: Record an operating expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinanceExpenseInput"
+      responses:
+        "201":
+          description: Expense recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceExpense"
+        "400":
+          description: Invalid expense
+        "401":
+          description: Admin sign-in required
+  /admin/reports:
+    get:
+      operationId: getAdminReport
+      tags: [admin]
+      summary: Get sales, expenses, and finance metrics for a date range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Sales, inventory, and operating finance report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminReport"
+        "400":
+          description: Invalid report date range
+        "401":
+          description: Admin sign-in required
+  /admin/settings:
+    get:
+      operationId: getAdminSettings
+      tags: [admin]
+      summary: Get store settings for management
+      responses:
+        "200":
+          description: Store settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreSettings"
+        "401":
+          description: Admin sign-in required
+    put:
+      operationId: updateStoreSettings
+      tags: [admin]
+      summary: Update store content and contact details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoreSettingsInput"
+      responses:
+        "200":
+          description: Settings saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoreSettings"
+        "401":
+          description: Admin sign-in required
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Category:
+      type: object
+      required: [id, name, slug, description, sortOrder, visible, demo]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        sortOrder: { type: integer }
+        visible: { type: boolean }
+        demo: { type: boolean }
+    Book:
+      type: object
+      required: [id, title, author, description, synopsis, categoryId, categoryName, price, stock, featured, visible, demo, coverUrl, extraImages, videoUrl, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        author: { type: string }
+        description: { type: string }
+        synopsis: { type: string }
+        categoryId: { type: ["integer", "null"] }
+        categoryName: { type: ["string", "null"] }
+        price: { type: integer }
+        stock: { type: integer }
+        featured: { type: boolean }
+        visible: { type: boolean }
+        demo: { type: boolean }
+        coverUrl: { type: ["string", "null"] }
+        extraImages:
+          type: array
+          items: { type: string }
+        videoUrl: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    AdminBook:
+      allOf:
+        - $ref: "#/components/schemas/Book"
+        - type: object
+          required: [cost]
+          properties:
+            cost: { type: integer }
+    Catalog:
+      type: object
+      required: [categories, books, total, demo]
+      properties:
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+        books:
+          type: array
+          items: { $ref: "#/components/schemas/Book" }
+        total: { type: integer }
+        demo: { type: boolean }
+    Bestsellers:
+      type: object
+      required: [books, usingNovelties]
+      properties:
+        books:
+          type: array
+          items: { $ref: "#/components/schemas/Book" }
+        usingNovelties: { type: boolean }
+    StoreSettings:
+      type: object
+      required: [heroTitle, heroSubtitle, story, whatsappNumber, greetingMessage, address, openingHours, mapsUrl, instagram, facebook, tiktok, creditLink, deliveryInfo, pickupAddress, pickupHours, paymentMethods, lowStockThreshold]
+      properties:
+        heroTitle: { type: string }
+        heroSubtitle: { type: string }
+        story: { type: string }
+        whatsappNumber: { type: string }
+        greetingMessage: { type: string }
+        address: { type: string }
+        openingHours: { type: string }
+        mapsUrl: { type: string }
+        instagram: { type: string }
+        facebook: { type: string }
+        tiktok: { type: string }
+        creditLink: { type: string }
+        deliveryInfo: { type: string }
+        pickupAddress: { type: string }
+        pickupHours: { type: string }
+        paymentMethods:
+          type: array
+          items: { type: string }
+        lowStockThreshold: { type: integer }
+    OrderLineInput:
+      type: object
+      required: [bookId, quantity]
+      properties:
+        bookId: { type: integer }
+        quantity: { type: integer, minimum: 1, maximum: 25 }
+    OrderInput:
+      type: object
+      required: [name, phone, fulfillment, address, area, notes, paymentPreference, items]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, minLength: 8, maxLength: 24 }
+        fulfillment: { type: string, enum: [delivery, pickup] }
+        address: { type: ["string", "null"] }
+        area: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        paymentPreference: { type: string, enum: [cash, transfer, coordinate] }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 25
+          items: { $ref: "#/components/schemas/OrderLineInput" }
+    OrderLine:
+      type: object
+      required: [bookId, title, author, quantity, unitPrice, subtotal]
+      properties:
+        bookId: { type: integer }
+        title: { type: string }
+        author: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: integer }
+        subtotal: { type: integer }
+    Order:
+      type: object
+      required: [id, orderNumber, name, phone, fulfillment, address, area, notes, paymentPreference, status, total, items, createdAt]
+      properties:
+        id: { type: integer }
+        orderNumber: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        fulfillment: { type: string, enum: [delivery, pickup] }
+        address: { type: ["string", "null"] }
+        area: { type: ["string", "null"] }
+        notes: { type: ["string", "null"] }
+        paymentPreference: { type: string, enum: [cash, transfer, coordinate] }
+        status: { type: string, enum: [pending, confirmed, delivered, picked_up, cancelled] }
+        total: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderLine" }
+        createdAt: { type: string, format: date-time }
+    CreatedOrder:
+      type: object
+      required: [order, whatsappNumber]
+      properties:
+        order: { $ref: "#/components/schemas/Order" }
+        whatsappNumber: { type: string }
+    AdminLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 128 }
+    AdminSession:
+      type: object
+      required: [authenticated, email]
+      properties:
+        authenticated: { type: boolean }
+        email: { type: string }
+    Dashboard:
+      type: object
+      required: [salesToday, salesWeek, salesMonth, revenueMonth, pendingOrders, lowStockCount, outOfStockCount, topBooks]
+      properties:
+        salesToday: { type: integer }
+        salesWeek: { type: integer }
+        salesMonth: { type: integer }
+        revenueMonth: { type: integer }
+        pendingOrders: { type: integer }
+        lowStockCount: { type: integer }
+        outOfStockCount: { type: integer }
+        topBooks:
+          type: array
+          items:
+            type: object
+            required: [title, units]
+            properties:
+              title: { type: string }
+              units: { type: integer }
+    InventoryPurchase:
+      type: object
+      required: [id, bookId, bookTitle, quantity, unitCost, totalCost, supplier, notes, purchasedAt]
+      properties:
+        id: { type: integer }
+        bookId: { type: integer }
+        bookTitle: { type: string }
+        quantity: { type: integer }
+        unitCost: { type: integer }
+        totalCost: { type: integer }
+        supplier: { type: string }
+        notes: { type: string }
+        purchasedAt: { type: string, format: date-time }
+    InventoryPurchaseInput:
+      type: object
+      required: [bookId, quantity, unitCost, supplier, notes, purchasedAt]
+      properties:
+        bookId: { type: integer, minimum: 1 }
+        quantity: { type: integer, minimum: 1, maximum: 100000 }
+        unitCost: { type: integer, minimum: 0, maximum: 1000000000 }
+        supplier: { type: string, maxLength: 180 }
+        notes: { type: string, maxLength: 1000 }
+        purchasedAt: { type: string, format: date-time }
+    FinanceExpense:
+      type: object
+      required: [id, title, category, amount, notes, incurredAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        category: { type: string }
+        amount: { type: integer }
+        notes: { type: string }
+        incurredAt: { type: string, format: date-time }
+    FinanceExpenseInput:
+      type: object
+      required: [title, category, amount, notes, incurredAt]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        amount: { type: integer, minimum: 1, maximum: 1000000000 }
+        notes: { type: string, maxLength: 1000 }
+        incurredAt: { type: string, format: date-time }
+    BookPerformance:
+      type: object
+      required: [bookId, title, units, stock, revenue]
+      properties:
+        bookId: { type: integer }
+        title: { type: string }
+        units: { type: integer }
+        stock: { type: integer }
+        revenue: { type: integer }
+    SalesTimelinePoint:
+      type: object
+      required: [bucket, units, revenue, expenses]
+      properties:
+        bucket: { type: string }
+        units: { type: integer }
+        revenue: { type: integer }
+        expenses: { type: integer }
+    CategoryPerformance:
+      type: object
+      required: [categoryId, categoryName, units, revenue]
+      properties:
+        categoryId: { type: ["integer", "null"] }
+        categoryName: { type: string }
+        units: { type: integer }
+        revenue: { type: integer }
+    AdminReport:
+      type: object
+      required: [salesUnits, salesOrders, revenue, costOfGoods, grossProfit, purchaseUnits, purchaseCount, purchaseSpend, expenseCount, expenseSpend, timelineUnit, salesTimeline, categoryPerformance, topBooks, slowBooks, purchases, expenses]
+      properties:
+        salesUnits: { type: integer }
+        salesOrders: { type: integer }
+        revenue: { type: integer }
+        costOfGoods: { type: integer }
+        grossProfit: { type: integer }
+        purchaseUnits: { type: integer }
+        purchaseCount: { type: integer }
+        purchaseSpend: { type: integer }
+        expenseCount: { type: integer }
+        expenseSpend: { type: integer }
+        timelineUnit: { type: string, enum: [hour, day, month] }
+        salesTimeline:
+          type: array
+          items: { $ref: "#/components/schemas/SalesTimelinePoint" }
+        categoryPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryPerformance" }
+        topBooks:
+          type: array
+          items: { $ref: "#/components/schemas/BookPerformance" }
+        slowBooks:
+          type: array
+          items: { $ref: "#/components/schemas/BookPerformance" }
+        purchases:
+          type: array
+          items: { $ref: "#/components/schemas/InventoryPurchase" }
+        expenses:
+          type: array
+          items: { $ref: "#/components/schemas/FinanceExpense" }
+    BookInput:
+      type: object
+      required: [title, author, description, synopsis, categoryId, price, cost, stock, featured, visible, demo, coverUrl, extraImages, videoUrl]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        author: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 5000 }
+        synopsis: { type: string, maxLength: 5000 }
+        categoryId: { type: ["integer", "null"] }
+        price: { type: integer, minimum: 0 }
+        cost: { type: integer, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        featured: { type: boolean }
+        visible: { type: boolean }
+        demo: { type: boolean }
+        coverUrl: { type: ["string", "null"] }
+        extraImages:
+          type: array
+          items: { type: string }
+        videoUrl: { type: ["string", "null"] }
+    BookUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 180 }
+        author: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 5000 }
+        synopsis: { type: string, maxLength: 5000 }
+        categoryId: { type: ["integer", "null"] }
+        price: { type: integer, minimum: 0 }
+        cost: { type: integer, minimum: 0 }
+        stock: { type: integer, minimum: 0 }
+        featured: { type: boolean }
+        visible: { type: boolean }
+        demo: { type: boolean }
+        coverUrl: { type: ["string", "null"] }
+        extraImages:
+          type: array
+          items: { type: string }
+        videoUrl: { type: ["string", "null"] }
+    CategoryInput:
+      type: object
+      required: [name, slug, description, sortOrder, visible, demo]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        slug: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 600 }
+        sortOrder: { type: integer }
+        visible: { type: boolean }
+        demo: { type: boolean }
+    CategoryUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        slug: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 600 }
+        sortOrder: { type: integer }
+        visible: { type: boolean }
+        demo: { type: boolean }
+    OrderStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [pending, confirmed, delivered, picked_up, cancelled] }
+    StoreSettingsInput:
+      type: object
+      required: [heroTitle, heroSubtitle, story, whatsappNumber, greetingMessage, address, openingHours, mapsUrl, instagram, facebook, tiktok, creditLink, deliveryInfo, pickupAddress, pickupHours, paymentMethods, lowStockThreshold]
+      properties:
+        heroTitle: { type: string, maxLength: 240 }
+        heroSubtitle: { type: string, maxLength: 600 }
+        story: { type: string, maxLength: 5000 }
+        whatsappNumber: { type: string, maxLength: 24 }
+        greetingMessage: { type: string, maxLength: 500 }
+        address: { type: string, maxLength: 400 }
+        openingHours: { type: string, maxLength: 500 }
+        mapsUrl: { type: string, maxLength: 1000 }
+        instagram: { type: string, maxLength: 500 }
+        facebook: { type: string, maxLength: 500 }
+        tiktok: { type: string, maxLength: 500 }
+        creditLink: { type: string, maxLength: 500 }
+        deliveryInfo: { type: string, maxLength: 1000 }
+        pickupAddress: { type: string, maxLength: 400 }
+        pickupHours: { type: string, maxLength: 500 }
+        paymentMethods:
+          type: array
+          items: { type: string, enum: [cash, transfer, coordinate] }
+        lowStockThreshold: { type: integer, minimum: 1, maximum: 20 }
+

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Nico Libros"
+description = "Tienda online editorial para descubrir, filtrar y pedir libros nuevos de Nico Libros en Córdoba, con catálogo, carrito y gestión de pedidos."
+version = "1.0.0"
+id = "artifacts/nico-libros"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25180
+
+[services.development]
+run = "pnpm --filter @workspace/nico-libros run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nico-libros", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nico-libros/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25180"
+BASE_PATH = "/"
