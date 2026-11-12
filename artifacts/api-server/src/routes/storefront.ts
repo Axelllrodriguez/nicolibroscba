@@ -6,7 +6,9 @@ import {
   db,
   orderItemsTable,
   ordersTable,
+  type Book,
 } from "@workspace/db";
+import type { OrderInput } from "@workspace/api-zod";
 import {
   CreateOrderBody,
   CreateOrderResponse,
@@ -27,6 +29,12 @@ const router: IRouter = Router();
 const orderAttempts = new Map<string, number[]>();
 const ORDER_WINDOW_MS = 15 * 60 * 1000;
 const ORDER_LIMIT = 6;
+
+type BookWithCategory = {
+  book: Book;
+  categoryName: string | null;
+};
+type StoreTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 class OrderInputError extends Error {}
 
@@ -163,7 +171,7 @@ router.get("/storefront/bestsellers", async (_req, res): Promise<void> => {
     .limit(8);
 
   const useNovelties = sales.length === 0;
-  const rows = useNovelties
+  const rows: BookWithCategory[] = useNovelties
     ? await db
         .select({ book: booksTable, categoryName: categoriesTable.name })
         .from(booksTable)
@@ -216,38 +224,41 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  const input = parsed.data;
-  const phone = safePhone(input.phone);
+  const orderInput: OrderInput = parsed.data;
+  const phone = safePhone(orderInput.phone);
   if (!phone) {
     res.status(400).json({ error: "Ingresá un WhatsApp argentino válido." });
     return;
   }
-  if (input.fulfillment === "delivery" && (!input.address?.trim() || !input.area?.trim())) {
+  if (
+    orderInput.fulfillment === "delivery" &&
+    (!orderInput.address?.trim() || !orderInput.area?.trim())
+  ) {
     res.status(400).json({ error: "Para el envío necesitamos la dirección y el barrio o localidad." });
     return;
   }
-  if (input.items.some((item) => !Number.isSafeInteger(item.quantity) || item.quantity < 1)) {
+  if (orderInput.items.some((item) => !Number.isSafeInteger(item.quantity) || item.quantity < 1)) {
     res.status(400).json({ error: "La cantidad de libros no es válida." });
     return;
   }
 
   const settings = await readStoreSettings();
-  if (!settings.paymentMethods.includes(input.paymentPreference)) {
+  if (!settings.paymentMethods.includes(orderInput.paymentPreference)) {
     res.status(400).json({ error: "Elegí una forma de pago disponible." });
     return;
   }
 
   try {
-    const orderId = await db.transaction(async (tx) => {
-      const ids = input.items.map((item) => item.bookId);
+    const orderId = await db.transaction(async (tx: StoreTransaction) => {
+      const ids = orderInput.items.map((item) => item.bookId);
       if (new Set(ids).size !== ids.length) throw new OrderInputError("duplicate");
-      const books = await tx
+      const books: Book[] = await tx
         .select()
         .from(booksTable)
         .where(and(inArray(booksTable.id, ids), eq(booksTable.visible, true)));
       if (books.length !== ids.length) throw new OrderInputError("missing");
       const byId = new Map(books.map((book) => [book.id, book]));
-      const lines = input.items.map((line) => {
+      const lines = orderInput.items.map((line) => {
         const book = byId.get(line.bookId);
         if (!book || book.stock < line.quantity) throw new OrderInputError("stock");
         return {
@@ -266,13 +277,13 @@ router.post("/orders", async (req, res): Promise<void> => {
         .insert(ordersTable)
         .values({
           orderNumber: `new-${crypto.randomUUID()}`,
-          name: input.name.trim(),
+          name: orderInput.name.trim(),
           phone,
-          fulfillment: input.fulfillment,
-          address: input.fulfillment === "delivery" ? input.address?.trim() ?? null : null,
-          area: input.fulfillment === "delivery" ? input.area?.trim() ?? null : null,
-          notes: input.notes?.trim() || null,
-          paymentPreference: input.paymentPreference,
+          fulfillment: orderInput.fulfillment,
+          address: orderInput.fulfillment === "delivery" ? orderInput.address?.trim() ?? null : null,
+          area: orderInput.fulfillment === "delivery" ? orderInput.area?.trim() ?? null : null,
+          notes: orderInput.notes?.trim() || null,
+          paymentPreference: orderInput.paymentPreference,
           status: "pending",
           total,
         })
