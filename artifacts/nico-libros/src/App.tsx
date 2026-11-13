@@ -496,7 +496,19 @@ function Admin() {
   const [adminNav, setAdminNav] = useState(false);
   const onLogin = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault(); const data = new FormData(e.currentTarget);
-    login.mutate({ data: { email: String(data.get('email')), password: String(data.get('password')) } }, { onSuccess: () => { setLoginError(''); client.invalidateQueries({ queryKey: getGetAdminSessionQueryKey() }); }, onError: () => setLoginError('No pudimos iniciar sesión. Revisá tu correo y contraseña.') });
+    login.mutate(
+      { data: { email: String(data.get('email')).trim().toLowerCase(), password: String(data.get('password')) } },
+      {
+        onSuccess: () => {
+          setLoginError('');
+          client.invalidateQueries({ queryKey: getGetAdminSessionQueryKey() });
+        },
+        onError: (err: any) => {
+          const apiMsg = err?.data?.error || err?.message;
+          setLoginError(apiMsg || 'No pudimos iniciar sesión. Revisá tu correo y contraseña.');
+        }
+      }
+    );
   };
   if (session.isLoading) return <AdminLoading/>;
   if (!session.data?.authenticated) return <AdminLogin onSubmit={onLogin} loading={login.isPending} error={loginError} retry={() => { setLoginError(''); session.refetch(); }}/>;

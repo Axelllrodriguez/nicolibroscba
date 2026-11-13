@@ -224,8 +224,9 @@ router.post("/admin/login", async (req, res): Promise<void> => {
     return;
   }
   const email = configuredAdminEmail();
-  const passwordHash = process.env["ADMIN_PASSWORD_HASH"];
-  if (!email || !passwordHash || !process.env["SESSION_SECRET"]) {
+  const passwordHash = process.env["ADMIN_PASSWORD_HASH"]?.trim().replace(/^["'](.*)["']$/, "$1");
+  const sessionSecret = process.env["SESSION_SECRET"]?.trim().replace(/^["'](.*)["']$/, "$1");
+  if (!email || !passwordHash || !sessionSecret) {
     res.status(503).json({ error: "El acceso del administrador todavía no está configurado." });
     return;
   }

@@ -4,8 +4,9 @@ import * as schema from "./schema/index.js";
 
 const { Pool } = pg;
 
-const connectionString =
-  process.env.DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:5432/nicolibros";
+const connectionString = (
+  process.env.DATABASE_URL || "postgresql://postgres:postgres@127.0.0.1:5432/nicolibros"
+).trim().replace(/^["'](.*)["']$/, "$1");
 
 const isRemote =
   !connectionString.includes("localhost") &&

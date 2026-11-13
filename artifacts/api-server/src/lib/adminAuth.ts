@@ -11,8 +11,10 @@ type SessionPayload = {
 };
 
 export function configuredAdminEmail(): string | null {
-  const email = process.env["ADMIN_EMAIL"]?.trim().toLowerCase();
-  if (!email || !process.env["ADMIN_PASSWORD_HASH"] || !process.env["SESSION_SECRET"]) {
+  const email = process.env["ADMIN_EMAIL"]?.trim().replace(/^["'](.*)["']$/, "$1").toLowerCase();
+  const hash = process.env["ADMIN_PASSWORD_HASH"]?.trim().replace(/^["'](.*)["']$/, "$1");
+  const secret = process.env["SESSION_SECRET"]?.trim().replace(/^["'](.*)["']$/, "$1");
+  if (!email || !hash || !secret) {
     return null;
   }
   return email;
