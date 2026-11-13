@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { and, asc, desc, eq, gte, gt, inArray, lt, lte, sql } from "drizzle-orm";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
-import express, { Router, type IRouter } from "express";
+import express, { Router } from "express";
 import {
   booksTable,
   categoriesTable,
@@ -62,7 +62,7 @@ import {
 } from "../lib/adminAuth.js";
 import { mediaUploadDir } from "../lib/mediaStorage.js";
 
-const router: IRouter = Router();
+const router = Router();
 const loginAttempts = new Map<string, number[]>();
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_LIMIT = 8;

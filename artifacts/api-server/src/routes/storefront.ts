@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, gt, inArray, lte, sql } from "drizzle-orm";
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import {
   booksTable,
   categoriesTable,
@@ -25,7 +25,7 @@ import {
   readStoreSettings,
 } from "../lib/storeData.js";
 
-const router: IRouter = Router();
+const router = Router();
 const orderAttempts = new Map<string, number[]>();
 const ORDER_WINDOW_MS = 15 * 60 * 1000;
 const ORDER_LIMIT = 6;

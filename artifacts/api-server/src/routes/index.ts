@@ -1,9 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import healthRouter from "./health.js";
 import storefrontRouter from "./storefront.js";
 import adminRouter from "./admin.js";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.use(healthRouter);
 router.use(storefrontRouter);
