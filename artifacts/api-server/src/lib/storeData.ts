@@ -1,5 +1,11 @@
-import { eq, sql } from "drizzle-orm";
-import { db, booksTable, categoriesTable, storeSettingsTable } from "@workspace/db";
+import {
+  db,
+  booksTable,
+  categoriesTable,
+  storeSettingsTable,
+  eq,
+  sql,
+} from "@workspace/db";
 import type { Book, Category, StoreSettings } from "@workspace/db";
 
 const legacyDefaultWhatsAppNumber = "5493510000000";
