@@ -52,15 +52,15 @@ import {
   publicCategory,
   publicSettings,
   readStoreSettings,
-} from "../lib/storeData";
+} from "../lib/storeData.js";
 import {
   clearAdminSession,
   configuredAdminEmail,
   getAdminEmail,
   requireAdmin,
   setAdminSession,
-} from "../lib/adminAuth";
-import { mediaUploadDir } from "../lib/mediaStorage";
+} from "../lib/adminAuth.js";
+import { mediaUploadDir } from "../lib/mediaStorage.js";
 
 const router: IRouter = Router();
 const loginAttempts = new Map<string, number[]>();

@@ -1,17 +1,17 @@
-import express from "express";
+import express, { type Application } from "express";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
-import router from "./routes";
-import { logger } from "./lib/logger";
-import { mediaUploadDir } from "./lib/mediaStorage";
-import { ensureSeedData } from "./lib/storeData";
+import router from "./routes/index.js";
+import { logger } from "./lib/logger.js";
+import { mediaUploadDir } from "./lib/mediaStorage.js";
+import { ensureSeedData } from "./lib/storeData.js";
 
 const sessionSecret = process.env["SESSION_SECRET"];
 if (!sessionSecret || Buffer.byteLength(sessionSecret) < 32) {
   throw new Error("SESSION_SECRET must contain at least 32 characters.");
 }
 
-const app = express();
+const app: Application = express();
 let seedPromise: Promise<void> | null = null;
 
 app.set("trust proxy", 1);

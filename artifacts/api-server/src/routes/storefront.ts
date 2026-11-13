@@ -23,7 +23,7 @@ import {
   publicSettings,
   publicWhatsAppNumber,
   readStoreSettings,
-} from "../lib/storeData";
+} from "../lib/storeData.js";
 
 const router: IRouter = Router();
 const orderAttempts = new Map<string, number[]>();
