@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import cookieParser from "cookie-parser";
+import type { NextFunction, Request, Response } from "express";
 import { pinoHttp } from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
@@ -48,12 +49,12 @@ app.use(
     index: false,
     immutable: true,
     maxAge: "1y",
-    setHeaders(response) {
+    setHeaders(response: Response) {
       response.setHeader("X-Content-Type-Options", "nosniff");
     },
   }),
 );
-app.use("/api", (_req, res, next) => {
+app.use("/api", (_req: Request, res: Response, next: NextFunction) => {
   if (process.env["VERCEL"] !== "1") {
     next();
     return;
