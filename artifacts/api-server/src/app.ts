@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
+import type { ServerResponse } from "node:http";
 import cookieParser from "cookie-parser";
-import type { NextFunction, Request, Response } from "express";
 import { pinoHttp } from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
@@ -9,6 +9,11 @@ import { ensureSeedData } from "./lib/storeData.js";
 
 const require = createRequire(import.meta.url);
 const express = require("express") as typeof import("express");
+
+type ApiResponse = {
+  status(code: number): ApiResponse;
+  json(body: { error: string }): void;
+};
 
 const sessionSecret = process.env["SESSION_SECRET"];
 if (!sessionSecret || Buffer.byteLength(sessionSecret) < 32) {
@@ -49,19 +54,19 @@ app.use(
     index: false,
     immutable: true,
     maxAge: "1y",
-    setHeaders(response: Response) {
+    setHeaders(response: Pick<ServerResponse, "setHeader">) {
       response.setHeader("X-Content-Type-Options", "nosniff");
     },
   }),
 );
-app.use("/api", (_req: Request, res: Response, next: NextFunction) => {
+app.use("/api", (_req: unknown, res: ApiResponse, next: () => void) => {
   if (process.env["VERCEL"] !== "1") {
     next();
     return;
   }
   const pendingSeed = seedPromise ?? ensureSeedData();
   seedPromise = pendingSeed;
-  void pendingSeed.then(next).catch((error: unknown) => {
+  void pendingSeed.then(() => next()).catch((error: unknown) => {
     logger.error({ err: error }, "Failed to initialize store data");
     res.status(503).json({ error: "La tienda todavía no está disponible." });
   });
