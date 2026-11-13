@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express from "express";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -11,7 +11,7 @@ if (!sessionSecret || Buffer.byteLength(sessionSecret) < 32) {
   throw new Error("SESSION_SECRET must contain at least 32 characters.");
 }
 
-const app: Express = express();
+const app = express();
 let seedPromise: Promise<void> | null = null;
 
 app.set("trust proxy", 1);
@@ -55,8 +55,9 @@ app.use("/api", (_req, res, next) => {
     next();
     return;
   }
-  seedPromise ??= ensureSeedData();
-  void seedPromise.then(next).catch((error: unknown) => {
+  const pendingSeed = seedPromise ?? ensureSeedData();
+  seedPromise = pendingSeed;
+  void pendingSeed.then(next).catch((error: unknown) => {
     logger.error({ err: error }, "Failed to initialize store data");
     res.status(503).json({ error: "La tienda todavía no está disponible." });
   });
