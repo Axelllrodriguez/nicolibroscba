@@ -51,25 +51,66 @@ export default function HeroBooks() {
     if (!stage || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let frame = 0;
+    let mouseFrame = 0;
+    let targetMx = 0;
+    let targetMy = 0;
+    let currentMx = 0;
+    let currentMy = 0;
+
+    const hero = stage.closest('section');
+
     const updateProgress = () => {
-      const hero = stage.closest('section');
       const heroHeight = hero?.offsetHeight || window.innerHeight;
       const progress = Math.min(Math.max(window.scrollY / (heroHeight * 0.85), 0), 1);
       stage.style.setProperty('--p', progress.toFixed(4));
       frame = 0;
     };
+
     const scheduleUpdate = () => {
       if (!frame) frame = window.requestAnimationFrame(updateProgress);
     };
 
+    const onMouseMove = (e) => {
+      const rect = (hero || stage).getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      targetMx = (Math.max(0, Math.min(1, x)) - 0.5) * 2;
+      targetMy = (Math.max(0, Math.min(1, y)) - 0.5) * 2;
+    };
+
+    const onMouseLeave = () => {
+      targetMx = 0;
+      targetMy = 0;
+    };
+
+    const updateMouse = () => {
+      currentMx += (targetMx - currentMx) * 0.08;
+      currentMy += (targetMy - currentMy) * 0.08;
+      stage.style.setProperty('--mx', currentMx.toFixed(4));
+      stage.style.setProperty('--my', currentMy.toFixed(4));
+      mouseFrame = window.requestAnimationFrame(updateMouse);
+    };
+
     scheduleUpdate();
+    mouseFrame = window.requestAnimationFrame(updateMouse);
+
     window.addEventListener('scroll', scheduleUpdate, { passive: true });
     window.addEventListener('resize', scheduleUpdate);
+
+    if (hero) {
+      hero.addEventListener('mousemove', onMouseMove, { passive: true });
+      hero.addEventListener('mouseleave', onMouseLeave, { passive: true });
+    }
 
     return () => {
       window.removeEventListener('scroll', scheduleUpdate);
       window.removeEventListener('resize', scheduleUpdate);
+      if (hero) {
+        hero.removeEventListener('mousemove', onMouseMove);
+        hero.removeEventListener('mouseleave', onMouseLeave);
+      }
       if (frame) window.cancelAnimationFrame(frame);
+      if (mouseFrame) window.cancelAnimationFrame(mouseFrame);
     };
   }, []);
 

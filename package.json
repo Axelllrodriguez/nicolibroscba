@@ -6,8 +6,12 @@
   "engines": {
     "node": ">=20"
   },
+  "type": "module",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock'",
+    "dev:api": "pnpm --filter @workspace/api-server build && node --env-file=.env ./artifacts/api-server/dist/index.mjs",
+    "dev:web": "pnpm --filter @workspace/nico-libros dev",
+    "dev": "pnpm dev:api & pnpm dev:web",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

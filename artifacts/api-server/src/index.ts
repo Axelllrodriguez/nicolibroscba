@@ -3,18 +3,8 @@ import { logger } from "./lib/logger.js";
 import { ensureSeedData } from "./lib/storeData.js";
 
 const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+const parsedPort = rawPort ? Number(rawPort) : 3000;
+const port = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 
 const host = process.env["HOST"];
 

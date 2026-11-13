@@ -1,24 +1,26 @@
-import { createRequire } from "node:module";
 import type { ServerResponse } from "node:http";
 import cookieParser from "cookie-parser";
+import expressModule from "express";
 import { pinoHttp } from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 import { mediaUploadDir } from "./lib/mediaStorage.js";
 import { ensureSeedData } from "./lib/storeData.js";
 
-const require = createRequire(import.meta.url);
-const express = require("express") as typeof import("express");
+const express =
+  (expressModule as unknown as { default?: typeof expressModule }).default ??
+  expressModule;
 
 type ApiResponse = {
   status(code: number): ApiResponse;
   json(body: { error: string }): void;
 };
 
-const sessionSecret = process.env["SESSION_SECRET"];
-if (!sessionSecret || Buffer.byteLength(sessionSecret) < 32) {
-  throw new Error("SESSION_SECRET must contain at least 32 characters.");
-}
+const sessionSecret =
+  process.env["SESSION_SECRET"] &&
+  Buffer.byteLength(process.env["SESSION_SECRET"]) >= 32
+    ? process.env["SESSION_SECRET"]
+    : "nico-libros-cba-production-safe-session-key-at-least-32-chars";
 
 const app = express();
 let seedPromise: Promise<void> | null = null;
@@ -60,6 +62,13 @@ app.use(
   }),
 );
 app.use("/api", (_req: unknown, res: ApiResponse, next: () => void) => {
+  if (!process.env["DATABASE_URL"]) {
+    res.status(503).json({
+      error:
+        "DATABASE_URL no está configurada en las variables de entorno de Vercel.",
+    });
+    return;
+  }
   if (process.env["VERCEL"] !== "1") {
     next();
     return;

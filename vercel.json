@@ -5,11 +5,7 @@
   "outputDirectory": "artifacts/nico-libros/dist/public",
   "rewrites": [
     {
-      "source": "/admin",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin/:path*",
+      "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ]

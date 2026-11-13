@@ -1,5 +1,7 @@
 .hero-books {
   --p: 0;
+  --mx: 0;
+  --my: 0;
   --w: 170px;
   --h: 255px;
   position: relative;
@@ -15,11 +17,17 @@
   top: var(--y);
   transform-style: preserve-3d;
   transform:
-    translate3d(0, calc(var(--p) * var(--fall)), calc(var(--p) * -200px))
-    rotateZ(calc(var(--p) * var(--spin) + var(--rotZ)))
-    rotateX(calc(var(--p) * 35deg));
+    translate3d(
+      calc(var(--mx, 0) * 18px),
+      calc(var(--p) * var(--fall) + var(--my, 0) * 14px),
+      calc(var(--p) * -200px)
+    )
+    rotateZ(calc(var(--p) * var(--spin) + var(--rotZ) + var(--mx, 0) * 4deg))
+    rotateX(calc(var(--p) * 35deg + var(--my, 0) * -8deg))
+    rotateY(calc(var(--mx, 0) * 14deg));
   opacity: calc(1 - (var(--p) * var(--p) * 0.9));
   will-change: transform, opacity;
+  transition: transform 0.1s ease-out;
 }
 
 .book-float {
@@ -45,6 +53,33 @@
   transform-style: preserve-3d;
   transform: rotateY(var(--rotY)) rotateX(-6deg);
   filter: drop-shadow(18px 24px 22px rgba(20, 24, 45, 0.28));
+  border-radius: 2px 4px 4px 2px;
+}
+
+/* 3D Spine and specular page highlight */
+.book::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.26) 0%,
+      rgba(255, 255, 255, 0.22) 2.5%,
+      rgba(0, 0, 0, 0.1) 6%,
+      transparent 14%,
+      transparent 88%,
+      rgba(0, 0, 0, 0.15) 100%
+    ),
+    linear-gradient(
+      calc(115deg + var(--mx, 0) * 25deg),
+      rgba(255, 255, 255, 0.16) 0%,
+      transparent 45%
+    );
+  mix-blend-mode: overlay;
 }
 
 .book__image {
